@@ -2,7 +2,9 @@ package trounoir
 
 import (
 	"container/list"
+	"fmt"
 	"github.com/boltdb/bolt"
+	"net/rpc"
 	"strings"
 	"sync"
 )
@@ -11,10 +13,11 @@ const (
 	MAX_MEM_BUFFER_KEY = 2000
 )
 
-// collection of db
+// trounoir struct
+//
 type trounoir struct {
 	InputChannel    chan *item
-	OutputChannel   chan *item
+	BroadcastQueue  *list.List
 	Bolts           []*bolt.DB
 	MemBuffer       map[string]*bucketBuffer
 	NumMemBufferKey int
@@ -24,7 +27,6 @@ type trounoir struct {
 func New(bolt_cluster []string, db_name string) *trounoir {
 	tr := &trounoir{}
 	tr.InputChannel = make(chan *item)
-	tr.OutputChannel = make(chan *item, len(bolt_cluster))
 	return tr
 }
 
@@ -39,7 +41,8 @@ func (bb *bucketBuffer) remove(key string) {
 	bb.Unlock()
 }
 
-// add a key to bucket
+// add a key, value to bucket
+// forward the item to tr.InputChannel
 func (tr *trounoir) add(bucket string, key string, b []byte) {
 	bb := tr.MemBuffer[bucket]
 	bb.Lock()
@@ -59,6 +62,15 @@ func (tr *trounoir) add(bucket string, key string, b []byte) {
 	bb.Unlock()
 }
 
+func (tr *trounoir) broadcast() {
+	for {
+		select {
+		case item := <-tr.InputChannel:
+			tr.BroadcastQueue.PushFront(item)
+		}
+	}
+}
+
 type item struct {
 	bucket string
 	key    string
@@ -66,11 +78,13 @@ type item struct {
 }
 
 func (tr *trounoir) process() {
-	for i := range tr.Bolts {
-		out := <-tr.OutputChannel
-		tr.Bolts[i].Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte(out.bucket))
-			return b.Put([]byte(out.key), out.b)
-		})
-	}
+
+}
+
+func (tr *trounoir) server() {
+	rpc.HandleHTTP()
+}
+
+func (tr *trounoir) client(address string, port int) (*rpc.Client, error) {
+	return rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", address, port))
 }
