@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"fmt"
 	"github.com/boltdb/bolt"
+	"net"
+	"net/http"
 	"net/rpc"
 	"strings"
 	"sync"
@@ -62,6 +64,18 @@ func (tr *trounoir) add(bucket string, key string, b []byte) {
 	bb.Unlock()
 }
 
+func (tr *trounoir) addToBolt(bucket string, key string, b []byte) {
+	for k, _ := range tr.Bolts {
+		tr.Bolts[k].Begin(true)
+		tr.Bolts[k].Update(func(tx *bolt.Tx) error {
+			bu := tx.Bucket([]byte(bucket))
+			return bu.Put([]byte(key), b)
+		})
+		defer tr.Bolts[k].Close()
+
+	}
+}
+
 func (tr *trounoir) broadcast() {
 	for {
 		select {
@@ -81,8 +95,13 @@ func (tr *trounoir) process() {
 
 }
 
-func (tr *trounoir) server() {
+func (tr *trounoir) server(port int, err_chan chan<- error) {
 	rpc.HandleHTTP()
+	l, e := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if e != nil {
+		err_chan <- e
+	}
+	go http.Serve(l, nil)
 }
 
 func (tr *trounoir) client(address string, port int) (*rpc.Client, error) {
