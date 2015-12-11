@@ -64,7 +64,7 @@ func (tr *trounoir) add(bucket string, key string, b []byte) {
 	bb.Unlock()
 }
 
-func (tr *trounoir) addToBolt(bucket string, key string, b []byte) {
+func (tr *trounoir) writeToBolt(bucket string, key string, b []byte) {
 	for k, _ := range tr.Bolts {
 		tr.Bolts[k].Begin(true)
 		tr.Bolts[k].Update(func(tx *bolt.Tx) error {
@@ -72,8 +72,21 @@ func (tr *trounoir) addToBolt(bucket string, key string, b []byte) {
 			return bu.Put([]byte(key), b)
 		})
 		defer tr.Bolts[k].Close()
-
 	}
+}
+
+func (tr *trounoir) readFromBolt(bucket string, key string, first_react_chan chan<- []byte) error {
+	for k, _ := range tr.Bolts {
+		go func(k int) {
+			tr.Bolts[k].View(func(tx *bolt.Tx) error {
+				bu := tx.Bucket([]byte(bucket))
+				first_react_chan <- bu.Get([]byte(key))
+				return nil
+			})
+		}(k)
+	}
+
+	return nil
 }
 
 func (tr *trounoir) broadcast() {
