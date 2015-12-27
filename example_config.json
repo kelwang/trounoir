@@ -1,0 +1,33 @@
+{
+	"items": 
+	[
+		{
+			"host": "192.168.7.0",
+			"islocal": false
+		},
+
+		{
+			"host": "192.168.7.1",
+			"islocal": false
+		},
+
+		{
+			"host": "192.168.7.2",
+			"islocal": true
+		},
+
+		{
+			"host": "192.168.7.3",
+			"islocal": false
+		},
+
+		{
+			"host": "192.168.7.4",
+			"islocal": false
+		}
+	],
+
+	"port": 77439,
+	"copy_range": 3,
+	"mem_cache_key_size": 5000
+}
