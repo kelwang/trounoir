@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ERR_NO_ITEMS = errors.New("No Items in the config")
+	ERR_NO_ITEMS             = errors.New("No Items in the config")
 	ERR_COPYRANGE_TOO_LARGE  = errors.New("The copy range is larger than the length of the total cluster, please adjust your copyrange")
 	ERR_TOO_MANY_LOCALCONFIG = errors.New("More than one local config is found, make sure there is only one is local equals true")
 	ERR_LOCAL_CONFIG_UNFOUND = errors.New("Local Config is not found, make sure to check your islocal true for you local config")
@@ -45,22 +45,22 @@ func (config *Config) Parse(config_path string) error {
 	if err != nil {
 		return err
 	}
-	err =  json.Unmarshal(buf, config)	
+	err = json.Unmarshal(buf, config)
 	if err != nil {
 		return err
 	}
 	if len(config.Items) == 0 {
 		return ERR_NO_ITEMS
 	}
-	
+
 	if config.CopyRange > len(config.Items) {
 		return ERR_COPYRANGE_TOO_LARGE
 	}
-	
+
 	countLocal := 0
 	for k := range config.Items {
 		if config.Items[k].IsLocal {
-			countLocal ++
+			countLocal++
 		}
 	}
 	if countLocal == 0 {
@@ -69,7 +69,7 @@ func (config *Config) Parse(config_path string) error {
 	if countLocal > 1 {
 		return ERR_TOO_MANY_LOCALCONFIG
 	}
-	
+
 	return nil
 }
 

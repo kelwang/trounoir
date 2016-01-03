@@ -20,7 +20,7 @@ const (
 type trounoir struct {
 	InputChannel    chan *item
 	BroadcastQueue  *list.List
-	Bolts           []*bolt.DB
+	Bolt            *bolt.DB
 	MemBuffer       map[string]*bucketBuffer
 	NumMemBufferKey int
 	keyQueque       *list.List
@@ -65,26 +65,21 @@ func (tr *trounoir) add(bucket string, key string, b []byte) {
 }
 
 func (tr *trounoir) writeToBolt(bucket string, key string, b []byte) {
-	for k, _ := range tr.Bolts {
-		tr.Bolts[k].Begin(true)
-		tr.Bolts[k].Update(func(tx *bolt.Tx) error {
-			bu := tx.Bucket([]byte(bucket))
-			return bu.Put([]byte(key), b)
-		})
-		defer tr.Bolts[k].Close()
-	}
+	tr.Bolt.Begin(true)
+	tr.Bolt.Update(func(tx *bolt.Tx) error {
+		bu := tx.Bucket([]byte(bucket))
+		return bu.Put([]byte(key), b)
+	})
+	defer tr.Bolt.Close()
+
 }
 
 func (tr *trounoir) readFromBolt(bucket string, key string, first_react_chan chan<- []byte) error {
-	for k, _ := range tr.Bolts {
-		go func(k int) {
-			tr.Bolts[k].View(func(tx *bolt.Tx) error {
-				bu := tx.Bucket([]byte(bucket))
-				first_react_chan <- bu.Get([]byte(key))
-				return nil
-			})
-		}(k)
-	}
+	tr.Bolt.View(func(tx *bolt.Tx) error {
+		bu := tx.Bucket([]byte(bucket))
+		first_react_chan <- bu.Get([]byte(key))
+		return nil
+	})
 
 	return nil
 }
@@ -110,6 +105,7 @@ func (tr *trounoir) process() {
 
 func (tr *trounoir) server(port int, err_chan chan<- error) {
 	rpc.HandleHTTP()
+	//rpc.Register(trouno)
 	l, e := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if e != nil {
 		err_chan <- e
