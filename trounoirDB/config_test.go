@@ -1,4 +1,4 @@
-package trounoir
+package trounoirDB
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -7,10 +7,10 @@ import (
 
 func TestConfig(t *testing.T) {
 	cg := new(Config)
-	err := cg.Parse("example_config.json")
+	err := cg.Parse("../example_config.json")
 	assert.Nil(t, err, "parsing err")
 	assert.Equal(t, 3, cg.CopyRange)
-	assert.Equal(t, 77439, cg.Port)
+	assert.Equal(t, 57439, cg.Port)
 	assert.Equal(t, 5000, cg.MemcacheKeySize)
 	items := []ConfigItem{
 		{"192.168.7.0", false},

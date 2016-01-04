@@ -1,4 +1,4 @@
-package trounoir
+package trounoirDB
 
 import (
 	"io/ioutil"

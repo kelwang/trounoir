@@ -27,7 +27,7 @@
 		}
 	],
 
-	"port": 77439,
+	"port": 57439,
 	"copy_range": 3,
 	"mem_cache_key_size": 5000
 }

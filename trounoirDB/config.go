@@ -1,4 +1,4 @@
-package trounoir
+package trounoirDB
 
 import (
 	"encoding/json"
@@ -37,6 +37,7 @@ type Config struct {
 	Port            int          `json:"port"`
 	CopyRange       int          `json:"copy_range"`
 	MemcacheKeySize int          `json:"mem_cache_key_size"`
+	Salt            string       `json:"salt"`
 }
 
 // parse the json file, return errors if found any

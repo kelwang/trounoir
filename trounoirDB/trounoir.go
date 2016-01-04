@@ -1,7 +1,8 @@
-package trounoir
+package trounoirDB
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"net"
@@ -14,6 +15,94 @@ import (
 const (
 	MAX_MEM_BUFFER_KEY = 2000
 )
+
+var (
+	ERR_REQUEST_NOT_VERIFIED = errors.New("The remote request is not verified")
+	ERR_MISSING_BUCKET       = errors.New("Missing bucket")
+	ERR_MISSING_KEY          = errors.New("Missing Key")
+	ERR_MISSING_VALUE        = errors.New("Missing Value")
+)
+
+type Trounoir struct {
+	Config
+	LocalConfig
+	Bolt            *bolt.DB
+	MemBuffer       map[string][]byte
+	NumMemBufferKey int
+	keyQueque       *list.List
+}
+
+func (t *Trounoir) Fetch(r *Request, result *[]byte) error {
+
+	if r.IsRemote {
+		if !r.Verify(t.Config.Salt) {
+			return ERR_REQUEST_NOT_VERIFIED
+		}
+	}
+
+	if r.Bucket == "" {
+		return ERR_MISSING_BUCKET
+	}
+
+	if r.Key == "" {
+		return ERR_MISSING_KEY
+	}
+
+	//search memcache
+	if rlt, ok := t.MemBuffer[r.Bucket+" "+r.Key]; ok {
+		*result = rlt
+		return nil
+	}
+
+	first_result_chan := make(chan []byte)
+
+	go func() {
+		//search bolt
+		t.Bolt.View(func(tx *bolt.Tx) error {
+			bu := tx.Bucket([]byte(r.Bucket))
+			first_result_chan <- bu.Get([]byte(r.Key))
+			return nil
+		})
+	}()
+
+	if !r.IsRemote {
+		//search remote
+		err_chan := make(chan error)
+		remote_result_chan := make(chan []byte)
+
+		for k := range t.Items {
+			if !t.Items[k].IsLocal {
+				go func(k int) {
+					var res []byte
+					err := clientCall("Trounoir.Get", r, t.Items[k].Host, t.Config.Port, &res)
+					if err != nil {
+						err_chan <- err
+					}
+					remote_result_chan <- res
+				}(k)
+			}
+		}
+		for {
+			select {
+			case err := <-err_chan:
+				return err
+			case res := <-remote_result_chan:
+				first_result_chan <- res
+			}
+		}
+	}
+
+	*result = <-first_result_chan
+	return nil
+}
+
+func clientCall(method string, r *Request, host string, port int, result *[]byte) error {
+	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", host, port))
+	if err != nil {
+		return err
+	}
+	return client.Call(method, r, result)
+}
 
 // trounoir struct
 //
