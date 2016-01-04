@@ -27,9 +27,6 @@ type Trounoir struct {
 	Config
 	LocalConfig
 	Bolt            *bolt.DB
-	MemBuffer       map[string][]byte
-	NumMemBufferKey int
-	keyQueque       *list.List
 }
 
 func (t *Trounoir) Fetch(r *Request, result *[]byte) error {
@@ -46,12 +43,6 @@ func (t *Trounoir) Fetch(r *Request, result *[]byte) error {
 
 	if r.Key == "" {
 		return ERR_MISSING_KEY
-	}
-
-	//search memcache
-	if rlt, ok := t.MemBuffer[r.Bucket+" "+r.Key]; ok {
-		*result = rlt
-		return nil
 	}
 
 	first_result_chan := make(chan []byte)

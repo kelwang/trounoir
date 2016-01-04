@@ -8,6 +8,7 @@ import (
 
 var (
 	ERR_NO_ITEMS             = errors.New("No Items in the config")
+	ERR_SALT_TOO_WEAK        = errors.New("The salt require at least 30 characters")
 	ERR_COPYRANGE_TOO_LARGE  = errors.New("The copy range is larger than the length of the total cluster, please adjust your copyrange")
 	ERR_TOO_MANY_LOCALCONFIG = errors.New("More than one local config is found, make sure there is only one is local equals true")
 	ERR_LOCAL_CONFIG_UNFOUND = errors.New("Local Config is not found, make sure to check your islocal true for you local config")
@@ -36,7 +37,6 @@ type Config struct {
 	Items           []ConfigItem `json:"items"`
 	Port            int          `json:"port"`
 	CopyRange       int          `json:"copy_range"`
-	MemcacheKeySize int          `json:"mem_cache_key_size"`
 	Salt            string       `json:"salt"`
 }
 
@@ -50,6 +50,11 @@ func (config *Config) Parse(config_path string) error {
 	if err != nil {
 		return err
 	}
+
+	if len(config.Salt) < 30 {
+		return ERR_SALT_TOO_WEAK
+	}
+
 	if len(config.Items) == 0 {
 		return ERR_NO_ITEMS
 	}
