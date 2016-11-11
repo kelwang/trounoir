@@ -5,35 +5,34 @@ import (
 	"os"
 )
 
-const (
-	DB_PATH = `/Users/kewang/Applications/trounoir/`
-)
-
 type Table interface {
 	Path() string
 	Put(key string, b []byte) error
 	Get(key string) ([]byte, error)
 }
 
-// create a new table
-func CreateTable(Name string) (Table, error) {
-	err := os.Mkdir(DB_PATH+Name, 0755)
+// CreateTable will create a boltdb file under the folder
+func CreateTable(name string, cfg Config) (Table, error) {
+	path := cfg.Folder + "/" + name
+	err := os.Mkdir(path, 0755)
 	if err != nil {
 		return nil, err
 	}
-	return NewTable(Name), nil
+	return NewTable(name, path), nil
 }
 
-func NewTable(Name string) Table {
-	return &table{Name}
+// NewTable init a new table object
+func NewTable(name, path string) Table {
+	return &table{Name: name, path: path}
 }
 
 type table struct {
 	Name string
+	path string
 }
 
 func (t *table) Path() string {
-	return DB_PATH + t.Name + "/"
+	return t.path
 }
 
 func (t *table) Put(key string, b []byte) error {

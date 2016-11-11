@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	ERR_NO_ITEMS             = errors.New("No Items in the config")
-	ERR_SALT_TOO_WEAK        = errors.New("The salt require at least 30 characters")
-	ERR_COPYRANGE_TOO_LARGE  = errors.New("The copy range is larger than the length of the total cluster, please adjust your copyrange")
-	ERR_TOO_MANY_LOCALCONFIG = errors.New("More than one local config is found, make sure there is only one is local equals true")
-	ERR_LOCAL_CONFIG_UNFOUND = errors.New("Local Config is not found, make sure to check your islocal true for you local config")
+	errNoItems            = errors.New("No Items in the config")
+	errSaltTooWeak        = errors.New("The salt require at least 30 characters")
+	errCopyRangeTooLarge  = errors.New("The copy range is larger than the length of the total cluster, please adjust your copyrange")
+	errTooManyLocalconfig = errors.New("More than one local config is found, make sure there is only one is local equals true")
+	errLocalConfigUnfound = errors.New("Local Config is not found, make sure to check your islocal true for you local config")
 )
 
 // spread     1 2 3 4
@@ -38,6 +38,7 @@ type Config struct {
 	Port      int          `json:"port"`
 	CopyRange int          `json:"copy_range"`
 	Salt      string       `json:"salt"`
+	Folder    string       `json:"folder"`
 }
 
 // parse the json file, return errors if found any
@@ -52,15 +53,15 @@ func (config *Config) Parse(config_path string) error {
 	}
 
 	if len(config.Salt) < 30 {
-		return ERR_SALT_TOO_WEAK
+		return errSaltTooWeak
 	}
 
 	if len(config.Items) == 0 {
-		return ERR_NO_ITEMS
+		return errNoItems
 	}
 
 	if config.CopyRange > len(config.Items) {
-		return ERR_COPYRANGE_TOO_LARGE
+		return errCopyRangeTooLarge
 	}
 
 	countLocal := 0
@@ -70,10 +71,10 @@ func (config *Config) Parse(config_path string) error {
 		}
 	}
 	if countLocal == 0 {
-		return ERR_LOCAL_CONFIG_UNFOUND
+		return errLocalConfigUnfound
 	}
 	if countLocal > 1 {
-		return ERR_TOO_MANY_LOCALCONFIG
+		return errTooManyLocalconfig
 	}
 
 	return nil
@@ -100,7 +101,7 @@ func (config *Config) GetLocalConfig() (*LocalConfig, error) {
 		}
 	}
 
-	return nil, ERR_LOCAL_CONFIG_UNFOUND
+	return nil, errLocalConfigUnfound
 }
 
 // local config
