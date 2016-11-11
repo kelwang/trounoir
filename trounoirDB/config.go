@@ -34,10 +34,10 @@ var (
 // stop 1
 // do the rest, config and restart one by one
 type Config struct {
-	Items           []ConfigItem `json:"items"`
-	Port            int          `json:"port"`
-	CopyRange       int          `json:"copy_range"`
-	Salt            string       `json:"salt"`
+	Items     []ConfigItem `json:"items"`
+	Port      int          `json:"port"`
+	CopyRange int          `json:"copy_range"`
+	Salt      string       `json:"salt"`
 }
 
 // parse the json file, return errors if found any

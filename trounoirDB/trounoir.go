@@ -26,7 +26,7 @@ var (
 type Trounoir struct {
 	Config
 	LocalConfig
-	Bolt            *bolt.DB
+	Bolt *bolt.DB
 }
 
 func (t *Trounoir) Fetch(r *Request, result *[]byte) error {
